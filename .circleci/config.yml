@@ -22,7 +22,6 @@ jobs:
       - attach_workspace:
           at: .
       - run: pip3 install ansible boto boto3
-      - run: chmod 400 final.pem
       - run: ansible all --list-hosts
       - run: ansible-playbook ./ansible/ec2deploy.yml --user=ubuntu --key-file=final.pem
 
