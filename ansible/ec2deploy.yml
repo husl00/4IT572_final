@@ -1,0 +1,65 @@
+- name: Deploy to EC2
+  hosts: localhost
+  connection: local
+
+  tasks:
+    - name: Launch EC2 instance
+      ec2:
+        instance_type: t2.micro
+        image: ami-06451a6f16cf2d02d
+        region: us-east-1
+        key_name: final
+        vpc_subnet_id: subnet-8ec102af
+        assign_public_ip: yes
+        wait: yes
+        count: 1
+        group: eshop
+        aws_access_key: 'ASIA5VRQNM46A4RTGDVW'
+        aws_secret_key: 'Rk6K5tz9I75qx6we1wKs/RjOL1+ImnyTVjYaYffN'
+        security_token: 'FwoGZXIvYXdzEFIaDEh/V6FPCgRk04YTRCLIAVlFm5fNrGIHiKgyYwe3x+IdZCgm1/75BoM9arAghGjAXMBuTvgHEc0TANdLmJoKGLvXtRaBLSGFSnBClbJmAyMEruWgj701WqqVj4xDcZ2vzc7KQ9TqlBjjIkSWxOvZoonqBo5t5JS5f7Y8kzCiY7F611mKvm96LowXliT6ra96LT/nqtNKFed+D/kdda55GrdjJiYnild8KJ2BEN1KOmqH+YHGP1hLdM3xBSe9pUJMpyGMciJxD8FajE6XmSZ37uNH2Py79caOKOqc+fUFMi1Z8UXsf73TUN2WwAk/SA8TfpYtf5XGhuPgTzRj9YMIBkGsQbiA97xrV30i/QU='
+      register: ec2
+
+    - name: Add instance host to group
+      add_host: hostname={{ item.public_dns_name }} groupname=launched
+      with_items: '{{ec2.instances}}'
+
+    - name: Wait for SSH connection
+      wait_for: host={{ item.public_dns_name }} port=22 delay=30 timeout=300 state=started
+      with_items: '{{ec2.instances}}'
+
+
+- name: Configure EC2
+  hosts: launched
+  connection: ssh
+
+  tasks:
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+      become: yes
+
+    - service:
+        name: docker
+        state: started
+        enabled: yes
+      become: yes
+
+    - name: Get project files from GIT
+      git:
+        repo: 'https://github.com/husl00/4IT572_final'
+        dest: ./app
+
+    - name: Build Docker with Eshop
+      shell: cd app && docker build -t myeshop:latest .
+      become: yes
+
+    - name: Run Docker with Eshop
+      shell: docker run -p 80:3000 myeshop
+      async: 60
+      poll: 0
+      become: yes
+
+    - wait_for:
+        port: 80
