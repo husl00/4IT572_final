@@ -24,9 +24,9 @@
       with_items: '{{ec2.instances}}'
 
     - name: Wait for SSH connection
-      wait_for: host={{ item.public_dns_name }} port=22 delay=30 timeout=300 state=started
+      wait_for: host={{ item.public_dns_name }} port=22 delay=30 timeout=300 state=started fingerprint=yes
       with_items: '{{ec2.instances}}'
-      warn: yes
+
 
 
 - name: Configure EC2
