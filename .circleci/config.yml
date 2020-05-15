@@ -23,7 +23,7 @@ jobs:
           at: .
       - run: pip3 install ansible boto boto3
       - run: ansible all --list-hosts
-      - run: ansible-playbook ./ansible/ec2deploy.yml --user=ubuntu --key-file=final.pem
+      - run: ansible-playbook ./ansible/ec2deploy.yml --user ubuntu --key-file ../final.pem
 
 workflows:
   version: 2.1
